@@ -1,16 +1,34 @@
-import networkx as nx
-import matplotlib.pyplot as plt
-from typing import List, Dict
 import math
-from openai import OpenAI
-from dotenv import load_dotenv
+import os
+from pathlib import Path
+from typing import List, Dict
 
+import matplotlib.pyplot as plt
+import networkx as nx
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=True)
 load_dotenv(override=True)
+
+GEMINI_OPENAI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+
+
+def _make_client(model_name: str) -> OpenAI:
+    openai_key = os.getenv("OPENAI_API_KEY")
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if model_name.startswith("gemini"):
+        if not gemini_key:
+            raise ValueError("GEMINI_API_KEY is not set. Add it to your .env file.")
+        return OpenAI(api_key=gemini_key, base_url=GEMINI_OPENAI_BASE_URL)
+    if not openai_key:
+        raise ValueError("OPENAI_API_KEY is not set. Add it to your .env file.")
+    return OpenAI(api_key=openai_key)
 
 
 class TokenPredictor:
     def __init__(self, model_name: str):
-        self.client = OpenAI()
+        self.client = _make_client(model_name)
         self.messages = []
         self.predictions = []
         self.model_name = model_name
